@@ -1,0 +1,174 @@
+body {
+  border: 0;
+  padding: 0;
+  margin: auto;
+  outline: none;
+  font-size: 12px;
+  min-width: 650px;
+  user-select: none;
+  background-color: #fff;
+  font-family: arial, sans-serif;
+}
+
+canvas {
+  vertical-align: middle;
+}
+
+.toolbar {
+  top: 0;
+  right: 0;
+  z-index: 11;
+  position: absolute;
+}
+
+.toolbar table {
+  border-spacing: 0;
+  table-layout: fixed;
+}
+
+.toolbar table tr td {
+  padding: 0;
+  width: 42px;
+  height: 38px;
+  cursor: pointer;
+  user-select: none;
+  text-align: center;
+  transition: 300ms ease all;
+}
+
+.toolbar table tr td:hover {
+  background-color: rgba(0,0,0,0.05);
+}
+
+.toolbar table tr td svg {
+  fill: #777;
+  pointer-events: none;
+  vertical-align: middle;
+}
+.content {
+  border: 0;
+  width: auto;
+  z-index: -1;
+  margin: auto;
+  height: 100%;
+  padding: 0 18px;
+  text-align: center;
+}
+
+.label {
+  margin: auto;
+  width: 300px;
+  margin-top: 32px;
+  line-height: 16px;
+  position: relative;
+  margin-bottom: 16px;
+}
+
+.label div {
+  margin: 0;
+  color: #555;
+  width: 32px;
+  height: 32px;
+  font-size: 12px;
+  position: absolute;
+  top: calc(50% + 16px);
+  left: calc(50% - 16px);
+  font-family: arial,sans-serif;
+  background-color: transparent;
+  transform-origin: center center;
+}
+
+.label .info {
+  top: 45%;
+  left: -82%;
+  width: 100%;
+  color: #777;
+  font-size: 11px;
+  text-align: center;
+  font-family: monospace;
+  transform: rotate(-90deg)
+}
+
+.label .downlink {
+  left: 0;
+  top: 90%;
+  width: 100%;
+  height: 24px;
+  color: #8500ff;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 24px;
+  text-align: center;
+  letter-spacing: 1px;
+  font-family: monospace;
+}
+
+.metrics {
+  padding-top: 10px;
+  margin-bottom: 10px;
+  border-top: solid 1px rgba(0,0,0,0.1);
+}
+
+.metrics div {
+  border: 0;
+  padding: 0;
+  width: 100%;
+  color: #333;
+  height: 24px;
+  font-size: 12px;
+  text-align: left;
+  line-height: 24px;
+  margin: 0 0 5px 0;
+  user-select: none;
+  font-family: monospace;
+  background-color: transparent;
+}
+
+.moreinfo {
+  margin: 0;
+  width: 9px;
+  color: #777;
+  cursor: pointer;
+  vertical-align: super;
+  display: inline-block;
+}
+
+.moreinfo svg {
+  fill: #555;
+}
+
+.api {
+  height: 32px !important;
+}
+
+.wifi-on, .wifi-off {
+  top: 309px;
+  position: fixed;
+  left: calc(100% - 28px);
+}
+
+.wifi-on svg {
+  fill: #9f37ff;
+  pointer-events: none;
+  vertical-align: middle;
+}
+
+.wifi-off svg {
+  fill: #787878;
+  pointer-events: none;
+  vertical-align: middle;
+}
+
+div[class='0.00'] {transform: rotate(240deg) translate(0, -150px)}
+div[class='12.5'] {transform: rotate(270deg) translate(0, -150px)}
+div[class='25.0'] {transform: rotate(300deg) translate(0, -150px)}
+div[class='37.5'] {transform: rotate(330deg) translate(0, -150px)}
+div[class='50.0'] {transform: rotate(360deg) translate(0, -150px)}
+div[class='62.5'] {transform: rotate(30deg) translate(0, -150px)}
+div[class='75.0'] {transform: rotate(60deg) translate(0, -150px)}
+div[class='87.5'] {transform: rotate(90deg) translate(0, -150px)}
+div[class='100.0'] {transform: rotate(120deg) translate(0, -150px)}
+
+html[context="webapp"] .toolbar {
+  display: none;
+}
