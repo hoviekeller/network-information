@@ -1,25 +1,37 @@
 var background = (function () {
-  var tmp = {};
-  var context = document.documentElement.getAttribute("context");
+  let tmp = {};
+  let context = document.documentElement.getAttribute("context");
   if (context === "webapp") {
     return {
       "send": function () {},
       "receive": function (callback) {}
     }
   } else {
-    chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
-      for (var id in tmp) {
+    chrome.runtime.onMessage.addListener(function (request) {
+      for (let id in tmp) {
         if (tmp[id] && (typeof tmp[id] === "function")) {
           if (request.path === "background-to-interface") {
-            if (request.method === id) tmp[id](request.data);
+            if (request.method === id) {
+              tmp[id](request.data);
+            }
           }
         }
       }
     });
     /*  */
     return {
-      "receive": function (id, callback) {tmp[id] = callback},
-      "send": function (id, data) {chrome.runtime.sendMessage({"path": "interface-to-background", "method": id, "data": data})}
+      "receive": function (id, callback) {
+        tmp[id] = callback;
+      },
+      "send": function (id, data) {
+        chrome.runtime.sendMessage({
+          "method": id, 
+          "data": data,
+          "path": "interface-to-background"
+        }, function () {
+          return chrome.runtime.lastError;
+        });
+      }
     }
   }
 })();
@@ -37,7 +49,7 @@ var config = {
     "name": '',
     "connect": function () {
       config.port.name = "webapp";
-      var context = document.documentElement.getAttribute("context");
+      const context = document.documentElement.getAttribute("context");
       /*  */
       if (chrome.runtime) {
         if (chrome.runtime.connect) {
@@ -57,10 +69,10 @@ var config = {
     }
   },
   "load": function () {
-    var reload = document.querySelector("#reload");
-    var support = document.querySelector("#support");
-    var donation = document.querySelector("#donation");
-    var moreinfo = document.querySelector(".moreinfo");
+    const reload = document.querySelector("#reload");
+    const support = document.querySelector("#support");
+    const donation = document.querySelector("#donation");
+    const moreinfo = document.querySelector(".moreinfo");
     /*  */
     config.gauge.element = document.querySelector(".gauge");
     config.gauge.object = new Gauge(config.gauge.element).setOptions(config.downlink.options);
@@ -93,7 +105,7 @@ var config = {
     "write": function (id, data) {
       if (id) {
         if (data !== '' && data !== null && data !== undefined) {
-          var tmp = {};
+          let tmp = {};
           tmp[id] = data;
           config.storage.local[id] = data;
           chrome.storage.local.set(tmp, function () {});
@@ -139,9 +151,9 @@ var config = {
   },
   "app": {
     "update": function (e) {
-      var label = document.querySelector(".label");
-      var info = document.querySelector(".label .info");
-      var downlink = document.querySelector(".label .downlink");
+      const label = document.querySelector(".label");
+      const info = document.querySelector(".label .info");
+      const downlink = document.querySelector(".label .downlink");
       /*  */
       info.style.top = e.outerWidth < 450 ? "99%" : "45%";
       info.style.left = e.outerWidth < 450 ? "0" : "-82%";
@@ -150,14 +162,14 @@ var config = {
       label.style.marginLeft = e.outerWidth < 450 ? (((e.outerWidth - 300) / 2) - 15) + "px" : "auto";
     },
     "start": function () {
-      var wifion = document.querySelector(".wifi-on");
-      var wifioff = document.querySelector(".wifi-off");
+      const wifion = document.querySelector(".wifi-on");
+      const wifioff = document.querySelector(".wifi-off");
       /*  */
       if (config.connection) {
         const metric = config.connection.downlink;
-        var numerics = [0, 1, 5, 10, 20, 30, 50, 75, 100];
+        const numerics = [0, 1, 5, 10, 20, 30, 50, 75, 100];
         /*  */
-        for (var i = 0; i < 8; i++) {
+        for (let i = 0; i < 8; i++) {
           if (metric > numerics[i] && metric <= numerics[i + 1]) {
             config.downlink.current = (i + (metric - numerics[i]) / (numerics[i + 1] - numerics[i])) * (100 / 8);
             document.querySelector(".label .downlink").textContent = metric + "Mb/s";
