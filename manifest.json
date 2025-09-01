@@ -16,10 +16,10 @@
     "default_title": "Network Information",
     "default_popup": "data/interface/index.html?popup",
      "default_icon": {
-       "16": "data/icons/16.png",
-       "32": "data/icons/32.png",
-       "48": "data/icons/48.png",
-       "64": "data/icons/64.png"
+       "16": "data/icons/toolbar/16.png",
+       "32": "data/icons/toolbar/32.png",
+       "48": "data/icons/toolbar/48.png",
+       "64": "data/icons/toolbar/64.png"
      }
   },
   "icons": {

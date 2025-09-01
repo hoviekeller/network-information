@@ -38,6 +38,10 @@ var background = (function () {
 
 var config = {
   "connection": null,
+  "interface": {
+    set theme (val) {config.storage.write("theme", val)},
+    get theme () {return config.storage.read("theme") !== undefined ? config.storage.read("theme") : "light"}
+  },
   "gauge": {
     "object": null,
     "element": null,
@@ -56,7 +60,7 @@ var config = {
     get spectrumcolor () {return config.storage.read("spectrumcolor") !== undefined ? config.storage.read("spectrumcolor") : true},
     get currentcolor () {return config.storage.read("currentcolor") !== undefined ? config.storage.read("currentcolor") : "#9f37ff"},
     get numberscolor () {return config.storage.read("numberscolor") !== undefined ? config.storage.read("numberscolor") : "#555555"},
-    get pointercolor () {return config.storage.read("pointercolor") !== undefined ? config.storage.read("pointercolor") : "#555555"},
+    get pointercolor () {return config.storage.read("pointercolor") !== undefined ? config.storage.read("pointercolor") : "#555555"}
   },
   "port": {
     "name": '',
@@ -155,6 +159,8 @@ var config = {
     }
   },
   "load": function () {
+    const reset = document.querySelector("#reset");
+    const theme = document.querySelector("#theme");
     const reload = document.querySelector("#reload");
     const support = document.querySelector("#support");
     const donation = document.querySelector("#donation");
@@ -202,6 +208,27 @@ var config = {
     pointercolor.addEventListener("input", function (e) {
       config.gauge.pointercolor = e.target.value;
       config.app.start();
+    });
+    /*  */
+    theme.addEventListener("click", function () {
+      const attribute = document.documentElement.getAttribute("theme");
+      config.interface.theme = attribute === "dark" ? "light" : "dark";
+      document.documentElement.setAttribute("theme", config.interface.theme);
+    });
+    /*  */
+    reset.addEventListener("click", function () {
+      const action = window.confirm("Are you sure you want to reset the extension to factory settings?");
+      if (action) {
+        config.storage.write("theme", null);
+        config.storage.write("tickscolor", null);
+        config.storage.write("strokecolor", null);
+        config.storage.write("currentcolor", null);
+        config.storage.write("numberscolor", null);
+        config.storage.write("pointercolor", null);
+        config.storage.write("spectrumcolor", null);
+        /*  */
+        config.app.start();
+      }
     });
     /*  */
     reload.addEventListener("click", function () {document.location.reload()});
@@ -259,6 +286,7 @@ var config = {
       document.documentElement.style.setProperty("--numbers-color", config.gauge.numberscolor);
       currentcolor.parentNode.style.display = config.gauge.spectrumcolor ? "none" : "table-cell";
       config.downlink.options.percentColors = config.methods.generate.colors(config.gauge.spectrumcolor);
+      document.documentElement.setAttribute("theme", config.interface.theme !== undefined ? config.interface.theme : "light");
       /*  */
       config.gauge.object.animationSpeed = config.gauge.animation.speed;
       config.gauge.object.minValue = config.gauge.min.value;
