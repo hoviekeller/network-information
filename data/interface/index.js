@@ -40,9 +40,12 @@ var config = {
   "connection": null,
   "interface": {
     set theme (val) {config.storage.write("theme", val)},
-    get theme () {return config.storage.read("theme") !== undefined ? config.storage.read("theme") : "light"}
+    get theme () {return config.storage.read("theme") !== undefined ? config.storage.read("theme") : "light"},
+    set skin (val) {config.storage.write("skin", val)},
+    get skin () {return config.storage.read("skin") !== undefined ? config.storage.read("skin") : ''}
   },
   "gauge": {
+    "first": true,
     "object": null,
     "element": null,
     "min": {"value": 0},
@@ -55,12 +58,12 @@ var config = {
     set numberscolor (val) {config.storage.write("numberscolor", val)},
     set pointercolor (val) {config.storage.write("pointercolor", val)},
     set spectrumcolor (val) {config.storage.write("spectrumcolor", val)},
-    get tickscolor () {return config.storage.read("tickscolor") !== undefined ? config.storage.read("tickscolor") : "#ffffff"},
+    get tickscolor () {return config.storage.read("tickscolor") !== undefined ? config.storage.read("tickscolor") : config.interface.theme === "dark" ? "#333333" : "#ffffff"},
     get strokecolor () {return config.storage.read("strokecolor") !== undefined ? config.storage.read("strokecolor") : "#e0e0e0"},
     get spectrumcolor () {return config.storage.read("spectrumcolor") !== undefined ? config.storage.read("spectrumcolor") : true},
     get currentcolor () {return config.storage.read("currentcolor") !== undefined ? config.storage.read("currentcolor") : "#9f37ff"},
-    get numberscolor () {return config.storage.read("numberscolor") !== undefined ? config.storage.read("numberscolor") : "#555555"},
-    get pointercolor () {return config.storage.read("pointercolor") !== undefined ? config.storage.read("pointercolor") : "#555555"}
+    get numberscolor () {return config.storage.read("numberscolor") !== undefined ? config.storage.read("numberscolor") : config.interface.theme === "dark" ? "#ebebeb" : config.interface.skin === "modern" ? "#000000" : "#555555"},
+    get pointercolor () {return config.storage.read("pointercolor") !== undefined ? config.storage.read("pointercolor") : config.interface.theme === "dark" ? "#ebebeb" : "#555555"}
   },
   "port": {
     "name": '',
@@ -107,6 +110,48 @@ var config = {
           delete config.storage.local[id];
           chrome.storage.local.remove(id, function () {});
         }
+      }
+    }
+  },
+  "poll": {
+    "last": null,
+    "timer": null,
+    "interval": 1000,
+    "tick": function () {
+      if (!config.connection) return;
+      if (config.app.signature() !== config.poll.last) {
+        config.app.start();
+      }
+    },
+    "start": function () {
+      if (config.poll.timer) return;
+      config.poll.timer = window.setInterval(config.poll.tick, config.poll.interval);
+    }
+  },
+  "ui": {
+    "timer": null,
+    "copytimer": null
+  },
+  "view": {
+    "current": "main",
+    "height": null,
+    "switch": function (view) {
+      const main = document.querySelector("#viewmain");
+      const log = document.querySelector("#viewlog");
+      if (view === "log") {
+        config.view.height = document.body.offsetHeight;
+      }
+      config.view.current = view;
+      document.documentElement.setAttribute("data-view", view);
+      document.body.style.minHeight = view === "log" ? config.view.height + "px" : "";
+      /*  */
+      if (view === "log") {
+        main.removeAttribute("data-active");
+        log.setAttribute("data-active", "true");
+        config.app.renderlog();
+      } else {
+        log.removeAttribute("data-active");
+        main.setAttribute("data-active", "true");
       }
     }
   },
@@ -159,18 +204,23 @@ var config = {
     }
   },
   "load": function () {
+    const skin = document.querySelector("#skin");
     const reset = document.querySelector("#reset");
     const theme = document.querySelector("#theme");
     const reload = document.querySelector("#reload");
     const support = document.querySelector("#support");
+    const viewlog = document.querySelector("#viewlog");
     const donation = document.querySelector("#donation");
+    const viewmain = document.querySelector("#viewmain");
     const moreinfo = document.querySelector(".moreinfo");
+    const copyreport = document.querySelector("#copyreport");
     const tickscolor = document.querySelector("#tickscolor");
     const strokecolor = document.querySelector("#strokecolor");
     const currentcolor = document.querySelector("#currentcolor");
     const numberscolor = document.querySelector("#numberscolor");
     const pointercolor = document.querySelector("#pointercolor");
     const spectrumcolor = document.querySelector("#spectrumcolor");
+    const clearlog = document.querySelector(".logsection .clearlog");
     /*  */
     config.gauge.element = document.querySelector(".gauge");
     config.gauge.object = new Gauge(config.gauge.element);
@@ -180,6 +230,9 @@ var config = {
       config.connection.addEventListener("change", config.app.start);
     }
     /*  */
+    window.addEventListener("online", config.app.start);
+    window.addEventListener("offline", config.app.start);
+    /*  */
     spectrumcolor.addEventListener("change", function (e) {
       config.gauge.spectrumcolor = e.target.checked;
       config.app.start();
@@ -187,26 +240,32 @@ var config = {
     /*  */
     currentcolor.addEventListener("input", function (e) {
       config.gauge.currentcolor = e.target.value;
-      config.app.start();
+      config.app.refresh();
     });
     /*  */
     tickscolor.addEventListener("input", function (e) {
       config.gauge.tickscolor = e.target.value;
-      config.app.start();
+      config.app.refresh();
     });
     /*  */
     numberscolor.addEventListener("input", function (e) {
       config.gauge.numberscolor = e.target.value;
-      config.app.start();
+      config.app.refresh();
     });
     /*  */
     strokecolor.addEventListener("input", function (e) {
       config.gauge.strokecolor = e.target.value;
-      config.app.start();
+      config.app.refresh();
     });
     /*  */
     pointercolor.addEventListener("input", function (e) {
       config.gauge.pointercolor = e.target.value;
+      config.app.refresh();
+    });
+    /*  */
+    skin.addEventListener("click", function () {
+      config.interface.skin = config.interface.skin === "modern" ? '' : "modern";
+      document.documentElement.setAttribute("skin", config.interface.skin);
       config.app.start();
     });
     /*  */
@@ -214,11 +273,14 @@ var config = {
       const attribute = document.documentElement.getAttribute("theme");
       config.interface.theme = attribute === "dark" ? "light" : "dark";
       document.documentElement.setAttribute("theme", config.interface.theme);
+      config.app.start();
     });
     /*  */
     reset.addEventListener("click", function () {
       const action = window.confirm("Are you sure you want to reset the extension to factory settings?");
       if (action) {
+        config.storage.write("log", null);
+        config.storage.write("skin", null);
         config.storage.write("theme", null);
         config.storage.write("tickscolor", null);
         config.storage.write("strokecolor", null);
@@ -231,15 +293,94 @@ var config = {
       }
     });
     /*  */
+    clearlog.addEventListener("click", function () {
+      const action = window.confirm("Are you sure you want to clear the connection log?");
+      if (action) {
+        config.storage.write("log", null);
+        config.app.renderlog();
+      }
+    });
+    /*  */
+    copyreport.addEventListener("click", config.app.copy);
     reload.addEventListener("click", function () {document.location.reload()});
     support.addEventListener("click", function () {background.send("support")});
     donation.addEventListener("click", function () {background.send("donation")});
     moreinfo.addEventListener("click", function () {background.send("moreinfo")});
+    viewlog.addEventListener("click", function () {config.view.switch("log")});
+    viewmain.addEventListener("click", function () {config.view.switch("main")});
     /*  */
+    config.poll.start();
     config.storage.load(config.app.start);
     window.removeEventListener("load", config.load, false);
   },
   "app": {
+    "signature": function () {
+      const c = config.connection;
+      return [navigator.onLine, c.type, c.effectiveType, c.downlink, c.downlinkMax, c.rtt, c.saveData].join("|");
+    },
+    "value": function (value, unit) {
+      if (value === undefined || value === null || value === '') return "N/A";
+      return value + (unit ? unit : '');
+    },
+    "hint": function (value) {
+      const hints = {"3g": " (ok)", "4g": " (fast)", "2g": " (slow)", "slow-2g": " (very slow)", "true": " (data saver on)"};
+      return typeof hints[value] === "string" ? hints[value] : '';
+    },
+    "refresh": function () {
+      window.clearTimeout(config.ui.timer);
+      config.ui.timer = window.setTimeout(config.app.start, 150);
+    },
+    "copy": function () {
+      const c = config.connection;
+      const lines = [
+        "Network Information report - " + new Date().toLocaleString(),
+        "Browser online: " + (window.navigator.onLine ? "yes" : "no"),
+        "Connection type: " + config.app.value(c.type),
+        "Connection rtt: " + config.app.value(c.rtt, "ms"),
+        "Connection saveData: " + config.app.value(c.saveData),
+        "Connection downlinkMax: " + config.app.value(c.downlinkMax, "Mb/s"),
+        "Connection effectiveType: " + config.app.value(c.effectiveType),
+        "Connection downlink: " + config.app.value(c.downlink, "Mb/s")
+      ];
+      const text = lines.join("\n");
+      /*  */
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(config.app.flash).catch(function () {config.app.copyfallback(text)});
+      } else {
+        config.app.copyfallback(text);
+      }
+    },
+    "flash": function () {
+      const cell = document.querySelector("#copyreport");
+      cell.classList.add("copied");
+      /*  */
+      window.clearTimeout(config.ui.copytimer);
+      config.ui.copytimer = window.setTimeout(function () {cell.classList.remove("copied")}, 600);
+    },
+    "copyfallback": function (text) {
+      const textarea = document.createElement("textarea");
+      textarea.value = text;
+      textarea.setAttribute("readonly", "readonly");
+      textarea.style.position = "fixed";
+      textarea.style.left = "-9999px";
+      /*  */
+      document.body.appendChild(textarea);
+      textarea.select();
+      document.execCommand("copy");
+      document.body.removeChild(textarea);
+      config.app.flash();
+    },
+    "gaugejump": function (current) {
+      if (!config.gauge.first) return;
+      config.gauge.object.displayedValue = current;
+      /*  */
+      const pointers = config.gauge.object.gp;
+      for (let i = 0; i < pointers.length; i++) {
+        pointers[i].displayedValue = current;
+      }
+      /*  */
+      config.gauge.first = false;
+    },
     "update": function (e) {
       const label = document.querySelector(".label");
       const info = document.querySelector(".label .info");
@@ -251,6 +392,61 @@ var config = {
       info.style.transform = e.outerWidth < 450 ? "none" : "rotate(-90deg)";
       label.style.marginLeft = e.outerWidth < 450 ? (((e.outerWidth - 300) / 2) - 15) + "px" : "auto";
     },
+    "logrecord": function (signature) {
+      const c = config.connection;
+      const entry = {
+        "rtt": c.rtt,
+        "type": c.type,
+        "sig": signature,
+        "downlink": c.downlink,
+        "saveData": c.saveData,
+        "downlinkMax": c.downlinkMax,
+        "effectiveType": c.effectiveType,
+        "online": window.navigator.onLine,
+        "time": new Date().toLocaleTimeString()
+      };
+      const log = config.storage.read("log");
+      const entries = Array.isArray(log) ? log : [];
+      /*  */
+      entries.unshift(entry);
+      config.storage.write("log", entries.slice(0, 30));
+    },
+    "logbaseline": function (signature) {
+      const log = config.storage.read("log");
+      const entries = Array.isArray(log) ? log : [];
+      /*  */
+      if (entries.length && entries[0].sig === signature) return;
+      config.app.logrecord(signature);
+    },
+    "renderlog": function () {
+      const rows = document.querySelector(".logsection .logrows");
+      const title = document.querySelector(".logsection .logtitle");
+      const log = config.storage.read("log");
+      const entries = Array.isArray(log) ? log : [];
+      title.textContent = "Connection log (" + entries.length + ")";
+      rows.textContent = '';
+      /*  */
+      if (!entries.length) {
+        const empty = document.createElement("div");
+        empty.className = "empty";
+        empty.textContent = "No changes yet";
+        rows.appendChild(empty);
+        return;
+      }
+      /*  */
+      for (let i = 0; i < entries.length; i++) {
+        const row = document.createElement("div");
+        row.textContent = config.app.logtext(entries[i]);
+        row.title = config.app.logtitle(entries[i]);
+        rows.appendChild(row);
+      }
+    },
+    "logtext": function (e) {
+      return e.time + " • " + (e.online ? "online" : "offline") + " • " + (e.effectiveType || "N/A") + " • " + config.app.value(e.downlink, "Mb/s") + " • rtt " + config.app.value(e.rtt, "ms") + " • " + (e.type || "N/A");
+    },
+    "logtitle": function (e) {
+      return e.time + " - " + (e.online ? "online" : "offline") + " - type: " + config.app.value(e.type) + " - effectiveType: " + config.app.value(e.effectiveType) + " - downlink: " + config.app.value(e.downlink, "Mb/s") + " - downlinkMax: " + config.app.value(e.downlinkMax, "Mb/s") + " - rtt: " + config.app.value(e.rtt, "ms") + " - saveData: " + config.app.value(e.saveData);
+    },
     "start": function () {
       const wifion = document.querySelector(".wifi-on");
       const wifioff = document.querySelector(".wifi-off");
@@ -260,18 +456,28 @@ var config = {
         const metric = config.connection.downlink;
         const numerics = [0, 1, 5, 10, 20, 30, 50, 75, 100];
         /*  */
-        for (let i = 0; i < 8; i++) {
-          if (metric >= numerics[i] && metric <= numerics[i + 1]) {
-            config.downlink.current = (i + (metric - numerics[i]) / (numerics[i + 1] - numerics[i])) * (100 / 8);
-            config.gauge.object.set(config.downlink.current);
-            downlink.textContent = metric + "Mb/s";
-            break;
+        if (typeof metric === "number") {
+          const value = Math.min(metric, 100);
+          for (let i = 0; i < 8; i++) {
+            if (value >= numerics[i] && value <= numerics[i + 1]) {
+              config.downlink.current = (i + (value - numerics[i]) / (numerics[i + 1] - numerics[i])) * (100 / 8);
+              config.app.gaugejump(config.downlink.current);
+              config.gauge.object.set(config.downlink.current);
+              downlink.textContent = metric + "Mb/s";
+              break;
+            }
           }
+        } else {
+          config.downlink.current = 0;
+          downlink.textContent = "N/A";
+          config.app.gaugejump(config.downlink.current);
+          config.gauge.object.set(config.downlink.current);
         }
       } else {
         config.connection = {};
         downlink.textContent = "N/A";
         config.gauge.object.set(config.downlink.current);
+        config.app.gaugejump(config.downlink.current);
       }
       /*  */
       tickscolor.value = config.gauge.tickscolor;
@@ -287,6 +493,7 @@ var config = {
       currentcolor.parentNode.style.display = config.gauge.spectrumcolor ? "none" : "table-cell";
       config.downlink.options.percentColors = config.methods.generate.colors(config.gauge.spectrumcolor);
       document.documentElement.setAttribute("theme", config.interface.theme !== undefined ? config.interface.theme : "light");
+      document.documentElement.setAttribute("skin", config.interface.skin);
       /*  */
       config.gauge.object.animationSpeed = config.gauge.animation.speed;
       config.gauge.object.minValue = config.gauge.min.value;
@@ -296,20 +503,35 @@ var config = {
       /*  */
       const fontcolor = config.gauge.object.getColorForPercentage(config.downlink.current / 100);
       if (fontcolor) {
-        downlink.style.color = fontcolor;
-        wifion.querySelector("svg").style.fill = fontcolor;
-        wifioff.querySelector("svg").style.fill = fontcolor;
+        const dark = config.interface.theme === "dark";
+        downlink.style.color = dark ? "rgb(64, 91, 255)" : fontcolor;
+        wifion.querySelector("svg").style.fill = dark ? "rgb(112, 132, 255)" : fontcolor;
+        wifioff.querySelector("svg").style.fill = dark ? "rgb(112, 132, 255)" : fontcolor;
       }
       /*  */
-      wifion.style.display = window.navigator.onLine ? "block" : "none";
-      wifioff.style.display = window.navigator.onLine ? "none" : "block";
+      wifion.style.display = window.navigator.onLine ? "flex" : "none";
+      wifioff.style.display = window.navigator.onLine ? "none" : "flex";
       /*  */
-      document.querySelector(".metrics .type").textContent = "1 • Connection type: " + (config.connection.type ? config.connection.type : "N/A");
-      document.querySelector(".metrics .rtt").textContent = "2 • Connection rtt: " + (config.connection.rtt ? config.connection.rtt + "ms" : "N/A");
-      document.querySelector(".metrics .saveData").textContent = "3 • Connection saveData: " + (config.connection.saveData ? config.connection.saveData : "N/A");
-      document.querySelector(".metrics .downlinkMax").textContent = "4 • Connection downlinkMax: " + (config.connection.downlinkMax ? config.connection.downlinkMax + "Mb/s" : "N/A");
-      document.querySelector(".metrics .effectiveType").textContent = "5 • Connection effectiveType: " + (config.connection.effectiveType ? config.connection.effectiveType : "N/A");
-      document.querySelector(".metrics .downlink").textContent = "6 • Connection downlink: " + (config.connection.downlink ? config.connection.downlink + "Mb/s" : "N/A");
+      document.querySelector(".metrics .type").textContent = "1 • Connection type: " + config.app.value(config.connection.type);
+      document.querySelector(".metrics .rtt").textContent = "2 • Connection rtt: " + config.app.value(config.connection.rtt, "ms");
+      document.querySelector(".metrics .saveData").textContent = "3 • Connection saveData: " + config.app.value(config.connection.saveData) + config.app.hint(config.connection.saveData);
+      document.querySelector(".metrics .downlinkMax").textContent = "4 • Connection downlinkMax: " + config.app.value(config.connection.downlinkMax, "Mb/s");
+      document.querySelector(".metrics .effectiveType").textContent = "5 • Connection effectiveType: " + config.app.value(config.connection.effectiveType) + config.app.hint(config.connection.effectiveType);
+      document.querySelector(".metrics .downlink").textContent = "6 • Connection downlink: " + config.app.value(config.connection.downlink, "Mb/s");
+      /*  */
+      const signature = config.app.signature();
+      if (config.poll.last === null) {
+        config.app.logbaseline(signature);
+      } else {
+        if (signature !== config.poll.last) {
+          config.app.logrecord(signature);
+        }
+      }
+      config.poll.last = signature;
+      /*  */
+      if (document.documentElement.getAttribute("data-view") === "log") {
+        config.app.renderlog();
+      }
     }
   },
   "methods": {
@@ -389,21 +611,23 @@ var config = {
       "colors": function (spectrum) {
         const total = 8;
         const colors = [];
+        const dark = config.interface.theme === "dark";
+        const adjust = (color) => dark ? config.methods.adjust.color.brightness(color, 0.25) : color;
         /*  */
         for (let i = 0; i <= total; i++) {
           if (i === 0) {
-            colors.push([12.5 * i / 100, "#d1d1d1"]);
+            colors.push([12.5 * i / 100, adjust("#d1d1d1")]);
           } else {
             if (spectrum) {
               const spectrumColor = config.methods.generate.spectrum.color(i, total);
-              colors.push([12.5 * i / 100, spectrumColor]);
+              colors.push([12.5 * i / 100, adjust(spectrumColor)]);
             } else {
               if (i === 1) {
-                colors.push([12.5 * i / 100, config.gauge.currentcolor]);
+                colors.push([12.5 * i / 100, adjust(config.gauge.currentcolor)]);
               } else {
                 const darknessFactor = -1 * ((i - 1) / (total - 1));
                 const colorVariation = config.methods.adjust.color.brightness(config.gauge.currentcolor, darknessFactor);
-                colors.push([12.5 * i / 100, colorVariation]);
+                colors.push([12.5 * i / 100, adjust(colorVariation)]);
               }
             }
           }

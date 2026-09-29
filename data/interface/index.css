@@ -1,4 +1,4 @@
-root {
+:root {
   --numbers-color: #555;
 }
 
@@ -10,6 +10,7 @@ body {
   font-size: 13px;
   min-width: 650px;
   user-select: none;
+  display: flow-root;
   background-color: #fff;
   font-family: arial, sans-serif;
 }
@@ -21,6 +22,13 @@ body {
   position: absolute;
 }
 
+.tabs {
+  right: 0;
+  bottom: 0;
+  z-index: 11;
+  position: fixed;
+}
+
 .toolbar {
   right: 0;
 }
@@ -29,12 +37,14 @@ body {
   left: 0;
 }
 
+.tabs table,
 .toolbar table,
 .settings table {
   border-spacing: 0;
   table-layout: fixed;
 }
 
+.tabs table tr td,
 .toolbar table tr td,
 .settings table tr td {
   padding: 0;
@@ -46,16 +56,29 @@ body {
   transition: 300ms ease all;
 }
 
+.tabs table tr td:hover,
 .toolbar table tr td:hover,
-.settings table tr td:hover {
-  background-color: rgba(0,0,0,0.05);
+.settings table tr td:hover,
+.content .logsection .clearlog:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+.toolbar table tr td.copied {
+  background-color: rgba(0, 0, 0, 0.15);
 }
 
 .toolbar table tr td svg,
-.settings table tr td svg {
+.settings table tr td svg,
+.tabs table tr td svg {
   fill: #555;
   pointer-events: none;
   vertical-align: middle;
+}
+
+.settings table tr td input[type='checkbox'] {
+  width: 14px;
+  height: 14px;
+  border-radius: 0;
 }
 
 .toolbar table tr td input[type='color'],
@@ -63,8 +86,8 @@ body {
   border: 0;
   margin: 0;
   padding: 0;
-  width: 16px;
-  height: 20px;
+  width: 18px;
+  height: 22px;
   outline: none;
   cursor: pointer;
   background-color: unset;
@@ -72,12 +95,13 @@ body {
 
 .content {
   border: 0;
+  padding: 0;
   width: auto;
   z-index: -1;
   margin: auto;
   height: 100%;
-  padding: 0 18px;
   text-align: center;
+  box-sizing: border-box;
 }
 
 .content .label {
@@ -149,8 +173,11 @@ body {
 
 .content .metrics {
   padding-top: 10px;
-  margin-bottom: 15px;
-  border-top: solid 1px rgba(0,0,0,0.1);
+  text-indent: 15px;
+  position: relative;
+  margin-bottom: 10px;
+  border: solid 1px transparent;
+  border-top-color: rgba(0, 0, 0, 0.1);
 }
 
 .content .metrics div {
@@ -175,17 +202,19 @@ body {
 
 .content .metrics .wifi-on,
 .content .metrics .wifi-off {
-  top: 338px;
+  right: 0;
+  width: 42px;
+  bottom: 185px;
+  display: flex;
   position: fixed;
-  left: calc(100% - 42px);
+  align-items: center;
+  justify-content: center;
   height: 32px !important;
   line-height: 32px !important;
-  background-color: #fff !important;
 }
 
-.content .metrics .wifi-on svg,
-.content .metrics .wifi-off svg {
-  margin: 0 0 0 12px;
+.content .metrics .wifi-off {
+  display: none;
 }
 
 .content .metrics .wifi-on svg {
@@ -213,13 +242,114 @@ body {
   fill: #555;
 }
 
+.content .logsection {
+  border: 0;
+}
+
+.content .logsection .logheader {
+  margin: 0;
+  color: #333;
+  height: 42px;
+  display: flex;
+  font-size: 13px;
+  text-align: left;
+  font-weight: 600;
+  text-indent: 10px;
+  line-height: 42px;
+  align-items: center;
+  font-family: monospace;
+}
+
+.content .logsection .clearlog {
+  margin: 0;
+  top: 12px;
+  right: 10px;
+  width: 42px;
+  color: #555;
+  height: 38px;
+  text-indent: 0;
+  cursor: pointer;
+  position: fixed;
+  line-height: 42px;
+  text-align: center;
+  display: inline-block;
+  transition: 300ms ease all;
+}
+
+.content .logsection .clearlog svg {
+  fill: #555;
+  pointer-events: none;
+}
+
+.content .logsection .logrows {
+  margin: 10px;
+  padding: 10px;
+  height: 100vh;
+  overflow-y: auto;
+  overflow-x: hidden;
+  box-sizing: border-box;
+  max-height: calc(100vh - 190px);
+  border: solid 1px rgb(0 0 0 / 10%);
+}
+
+.content .logsection .logrows div {
+  margin: 0;
+  border: 0;
+  padding: 0;
+  width: 100%;
+  color: #333;
+  height: 28px;
+  font-size: 13px;
+  overflow: hidden;
+  text-align: left;
+  line-height: 28px;
+  white-space: nowrap;
+  font-family: monospace;
+  text-overflow: ellipsis;
+  background-color: transparent;
+}
+
+.content .logsection .logrows div.empty {
+  color: #999999;
+}
+
+#viewmain,
+html[data-view='log'] #viewlog,
+html[data-view='main'] #viewmain {
+  display: none;
+}
+
+html[data-view='log'] #viewmain,
+html[data-view='main'] #viewlog {
+  display: table-cell;
+}
+
+html[data-view='log'] .content .label,
+html[data-view='log'] .content .metrics {
+  display: none;
+}
+
+html:not([data-view='log']) .content .logsection {
+  display: none;
+}
+
+html[data-view='log'] .toolbar,
+html[data-view='log'] .settings {
+  display: none;
+}
+
+html[data-view='log'] .content .logsection {
+  margin-top: 10px;
+  box-sizing: border-box;
+}
+
 html[context='webapp'] .toolbar #reload,
 html[context='webapp'] .toolbar #support,
 html[context='webapp'] .toolbar #donation {
   display: none;
 }
 
-html[theme='dark'], 
+html[theme='dark'],
 html[theme='dark'] body {
   color: #ebebeb;
   color-scheme: dark;
@@ -227,17 +357,20 @@ html[theme='dark'] body {
 }
 
 html[theme='dark'] .content .label .downlink {
-  background-color: rgb(255 255 255 / 75%);
+  color: rgb(64, 91, 255);
+  background-color: rgb(255 255 255 / 10%);
 }
 
-html[theme='dark'] .content .metrics .wifi-on,
-html[theme='dark'] .content .metrics .wifi-off {
-  background-color: rgb(255 255 255 / 75%) !important;
+html[theme='dark'] .content .metrics .wifi-on svg,
+html[theme='dark'] .content .metrics .wifi-off svg {
+  fill: rgb(112, 132, 255);
 }
 
+html[theme='dark'] .tabs table tr td:hover,
 html[theme='dark'] .toolbar table tr td:hover,
-html[theme='dark'] .settings table tr td:hover {
-    background-color: rgba(255 255 255 / 10%);
+html[theme='dark'] .settings table tr td:hover,
+html[theme='dark'] .content .logsection .clearlog:hover {
+  background-color: rgba(255 255 255 / 10%);
 }
 
 html[theme='dark'] .content .label .info,
@@ -246,10 +379,146 @@ html[theme='dark'] .content .metrics div {
 }
 
 html[theme='dark'] .content .metrics {
-  border-color: rgb(255 255 255 / 25%);
+  border-top-color: rgb(255 255 255 / 25%);
 }
 
+html[theme='dark'] .tabs table tr td svg,
 html[theme='dark'] .toolbar table tr td svg,
 html[theme='dark'] .settings table tr td svg {
   fill: #ebebeb;
+}
+
+html[theme='dark'] .toolbar table tr td.copied {
+  background-color: rgb(255 255 255 / 20%);
+}
+
+html[theme='dark'] .tabs table tr td[data-active] {
+  background-color: rgb(255 255 255 / 15%);
+}
+
+html[theme='dark'] .content .logsection {
+  border-top-color: rgb(255 255 255 / 25%);
+}
+
+html[theme='dark'] .content .logsection .logrows {
+  border-color: rgb(255 255 255 / 15%);
+}
+
+html[theme='dark'] .content .logsection .logheader,
+html[theme='dark'] .content .logsection .logrows div {
+  color: #ebebeb;
+}
+
+html[theme='dark'] .content .logsection .clearlog svg {
+  fill: #ebebeb;
+}
+
+html[skin='modern'] body {
+  background-color: #f2f3f5;
+  font-family: system-ui, sans-serif;
+}
+
+html[skin='modern'] .content {
+  padding: 0 10px;
+}
+
+html[skin='modern'] .tabs {
+  right: 14px;
+  bottom: 14px;
+}
+
+html[skin='modern'][data-view='log'] .tabs {
+  right: 0;
+  bottom: -5px;
+}
+
+html[skin='modern'] .tabs table,
+html[skin='modern'] .toolbar table,
+html[skin='modern'] .settings table {
+  border-spacing: 5px;
+}
+
+html[skin='modern'] .tabs table tr td,
+html[skin='modern'] .toolbar table tr td,
+html[skin='modern'] .settings table tr td {
+  border-radius: 4px;
+}
+
+html[skin='modern'] .content .logsection .clearlog {
+  top: 21px;
+  right: 21px;
+}
+
+html[skin='modern'] .content .logsection .logheader {
+  height: 58px;
+  line-height: 58px;
+}
+
+html[skin='modern'] .tabs table tr td:hover,
+html[skin='modern'] .toolbar table tr td:hover,
+html[skin='modern'] .settings table tr td:hover,
+html[skin='modern'] .content .logsection .clearlog:hover {
+  background-color: rgba(159, 55, 255, 0.08);
+}
+
+html[skin='modern'] .settings table tr td#skin,
+html[skin='modern'] .tabs table tr td[data-active],
+html[skin='modern'] .toolbar table tr td[data-active] {
+  background-color: rgba(159, 55, 255, 0.12);
+}
+
+html[skin='modern'] .settings table tr td#skin svg,
+html[skin='modern'] .tabs table tr td[data-active] svg,
+html[skin='modern'] .toolbar table tr td[data-active] svg {
+  fill: #9f37ff;
+}
+
+html[skin='modern'] .content .label .downlink {
+  border-radius: 3px;
+}
+
+html[skin='modern'] .content .metrics .wifi-on,
+html[skin='modern'] .content .metrics .wifi-off {
+  right: 20px;
+  border-radius: 3px;
+  border: solid 1px rgb(0 0 0 / 5%);
+}
+
+html[skin='modern'] .content .metrics,
+html[skin='modern'] .content .logsection {
+  border-radius: 4px;
+  background-color: #ffffff;
+  border: solid 1px rgba(0, 0, 0, 0.08);
+}
+
+html[theme='dark'][skin='modern'] body {
+  background-color: #141414;
+}
+
+html[theme='dark'][skin='modern'] .content .metrics,
+html[theme='dark'][skin='modern'] .content .logsection {
+  background-color: #1e1e1e;
+  border-color: rgb(255 255 255 / 7%);
+}
+
+html[theme='dark'][skin='modern'] .tabs table tr td:hover,
+html[theme='dark'][skin='modern'] .toolbar table tr td:hover,
+html[theme='dark'][skin='modern'] .settings table tr td:hover,
+html[theme='dark'][skin='modern'] .content .logsection .clearlog:hover {
+  background-color: rgb(159 55 255 / 15%);
+}
+
+html[theme='dark'][skin='modern'] .settings table tr td#skin,
+html[theme='dark'][skin='modern'] .tabs table tr td[data-active],
+html[theme='dark'][skin='modern'] .toolbar table tr td[data-active] {
+  background-color: rgb(159 55 255 / 20%);
+}
+
+html[theme='dark'][skin='modern'] .content .label .downlink {
+  background-color: rgb(255 255 255 / 10%);
+}
+
+html[theme='dark'][skin='modern'] .content .metrics .wifi-on,
+html[theme='dark'][skin='modern'] .content .metrics .wifi-off {
+  border-color: rgb(255 255 255 / 7%);
 }
